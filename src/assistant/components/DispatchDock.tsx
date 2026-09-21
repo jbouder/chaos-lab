@@ -3,6 +3,7 @@ import { Activity, ArrowUp, Eraser, Settings2, Square, Stethoscope, X } from "lu
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { deckOpenAtom } from "@/chaos/deck";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -17,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { getAction } from "@/incidents/actions";
 import { openIncidentsAtom } from "@/incidents/bus";
+import { SEVERITY_RANK } from "@/incidents/types";
 import { clockTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { engineStatusAtom, getEngine, modelIdAtom, selectModel } from "../engineClient";
@@ -34,18 +36,26 @@ import {
 } from "../store";
 import { ModelStatus } from "./ModelStatus";
 
-const QUICK_PROMPTS = [
+const DUTY_PROMPTS = [
+  "Where is MRD-4107?",
+  "Which shipments are delayed?",
+  "What does exception mean?",
+  "How do I book a shipment?",
+];
+
+const TRIAGE_PROMPTS = [
   "What just happened?",
   "Why did the retry fail?",
   "Is my data safe?",
   "Walk me through the fix",
 ];
 
-export function MedicDock() {
+export function DispatchDock() {
   const open = useAtomValue(dockOpenAtom);
   const unread = useAtomValue(unreadAtom);
   const incidents = useAtomValue(openIncidentsAtom);
   const status = useAtomValue(engineStatusAtom);
+  const deckOpen = useAtomValue(deckOpenAtom);
 
   const alarming = incidents.some(
     (incident) => incident.severity === "critical" || incident.severity === "error",
@@ -54,16 +64,21 @@ export function MedicDock() {
   return (
     <>
       {open && <DockPanel />}
-      <div className="pointer-events-none fixed bottom-16 right-4 z-50 flex flex-col items-end gap-3 md:bottom-4 xl:right-[21rem]">
+      <div
+        className={cn(
+          "pointer-events-none fixed bottom-16 right-4 z-50 flex flex-col items-end gap-3 md:bottom-4",
+          deckOpen && "xl:right-[21rem]",
+        )}
+      >
         {!open && (
           <button
             type="button"
             onClick={() => openDock()}
-            aria-label={`Open the Medic${unread > 0 ? `, ${unread} new messages` : ""}`}
+            aria-label={`Open Dispatch${unread > 0 ? `, ${unread} new messages` : ""}`}
             className={cn(
               "pointer-events-auto relative flex size-13 items-center justify-center rounded-full",
-              "border border-border bg-card text-medic shadow-lg transition-colors",
-              "hover:border-medic/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              "border border-border bg-card text-dispatch shadow-lg transition-colors",
+              "hover:border-dispatch/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               alarming && "border-crisis/50 text-crisis",
             )}
           >
@@ -73,14 +88,14 @@ export function MedicDock() {
                 alarming
                   ? "border-crisis/40 motion-safe:animate-ping"
                   : status.state === "downloading"
-                    ? "border-medic/30 motion-safe:animate-pulse"
+                    ? "border-dispatch/30 motion-safe:animate-pulse"
                     : "border-transparent",
               )}
               aria-hidden
             />
             <Stethoscope className="size-5" aria-hidden />
             {unread > 0 && (
-              <span className="tabular absolute -right-0.5 -top-0.5 flex size-4.5 items-center justify-center rounded-full bg-medic font-mono text-[10px] text-medic-foreground">
+              <span className="tabular absolute -right-0.5 -top-0.5 flex size-4.5 items-center justify-center rounded-full bg-dispatch font-mono text-[10px] text-dispatch-foreground">
                 {unread > 9 ? "9+" : unread}
               </span>
             )}
@@ -96,18 +111,24 @@ function DockPanel() {
   const settings = useAtomValue(settingsAtom);
   const status = useAtomValue(engineStatusAtom);
   const modelId = useAtomValue(modelIdAtom);
+  const deckOpen = useAtomValue(deckOpenAtom);
+  const incidents = useAtomValue(openIncidentsAtom);
   const [draft, setDraft] = useState("");
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const generating = status.state === "generating";
+  // The register it is working in: routine questions, or the alarm in front of it.
+  const alarm = incidents
+    .filter((incident) => SEVERITY_RANK[incident.severity] >= SEVERITY_RANK.error)
+    .sort((a, b) => SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity])[0];
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
   useEffect(() => {
-    // Opening the Medic is consent enough to start the download.
+    // Opening Dispatch is consent enough to start the download.
     if (settings.warmOnIdle && status.state === "idle") void getEngine().catch(() => {});
   }, [settings.warmOnIdle, status.state]);
 
@@ -135,18 +156,32 @@ function DockPanel() {
 
   return (
     <aside
-      aria-label="The Medic"
+      aria-label="The Dispatch"
       className={cn(
         "fixed z-50 flex flex-col border border-border bg-background shadow-2xl",
-        "inset-x-0 bottom-0 top-0 sm:inset-x-auto sm:bottom-4 sm:right-4 sm:top-auto xl:right-[21rem]",
+        "inset-x-0 bottom-0 top-0 sm:inset-x-auto sm:bottom-4 sm:right-4 sm:top-auto",
+        deckOpen && "xl:right-[21rem]",
         "sm:h-[min(38rem,calc(100vh-6rem))] sm:w-[26rem] sm:rounded-lg",
         "motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-4",
       )}
     >
       <header className="flex items-center gap-2 border-b border-border px-4 py-3">
-        <Activity className="size-4 shrink-0 text-medic" aria-hidden />
+        <Activity
+          className={cn("size-4 shrink-0", alarm ? "text-crisis" : "text-dispatch")}
+          aria-hidden
+        />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium tracking-tight text-foreground">The Medic</p>
+          <p className="text-sm font-medium tracking-tight text-foreground">
+            Dispatch
+            <span
+              className={cn(
+                "ml-2 text-[10px] uppercase tracking-[0.14em]",
+                alarm ? "text-crisis" : "text-muted-foreground",
+              )}
+            >
+              {alarm ? "triage" : "on duty"}
+            </span>
+          </p>
           <p className="truncate text-[11px] text-muted-foreground">
             {status.state === "unsupported"
               ? "Runbooks only — no WebGPU here"
@@ -154,13 +189,15 @@ function DockPanel() {
                 ? "Loading the model…"
                 : generating
                   ? "Writing…"
-                  : `${MODELS.find((model) => model.id === modelId)?.label ?? "Local model"} · runs on this device`}
+                  : alarm
+                    ? alarm.title
+                    : `${MODELS.find((model) => model.id === modelId)?.label ?? "Local model"} · runs on this device`}
           </p>
         </div>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button size="icon" variant="ghost" className="size-8" aria-label="Medic settings">
+            <Button size="icon" variant="ghost" className="size-8" aria-label="Dispatch settings">
               <Settings2 className="size-4" aria-hidden />
             </Button>
           </DropdownMenuTrigger>
@@ -169,7 +206,7 @@ function DockPanel() {
             <DropdownMenuCheckboxItem
               checked={settings.persona === "plain"}
               onCheckedChange={(checked) =>
-                updateSettings({ persona: checked ? "plain" : "medic" })
+                updateSettings({ persona: checked ? "plain" : "dispatch" })
               }
             >
               Explain it without the jargon
@@ -221,7 +258,7 @@ function DockPanel() {
           size="icon"
           variant="ghost"
           className="size-8"
-          aria-label="Close the Medic"
+          aria-label="Close Dispatch"
           onClick={closeDock}
         >
           <X className="size-4" aria-hidden />
@@ -232,7 +269,7 @@ function DockPanel() {
 
       <div ref={listRef} className="min-h-0 flex-1 overflow-y-auto">
         <div className="space-y-4 px-4 py-4" aria-live="polite">
-          {messages.length === 0 ? <EmptyState /> : null}
+          {messages.length === 0 ? <EmptyState onPick={submit} /> : null}
           {messages.map((message) => (
             <MessageRow key={message.id} message={message} />
           ))}
@@ -241,13 +278,13 @@ function DockPanel() {
 
       {messages.length > 0 && (
         <div className="flex gap-1.5 overflow-x-auto border-t border-border px-4 py-2">
-          {QUICK_PROMPTS.map((prompt) => (
+          {(alarm ? TRIAGE_PROMPTS : DUTY_PROMPTS).map((prompt) => (
             <button
               key={prompt}
               type="button"
               onClick={() => submit(prompt)}
               disabled={generating}
-              className="shrink-0 border border-border px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:border-medic/40 hover:text-foreground disabled:opacity-50"
+              className="shrink-0 border border-border px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:border-dispatch/40 hover:text-foreground disabled:opacity-50"
             >
               {prompt}
             </button>
@@ -266,8 +303,10 @@ function DockPanel() {
           ref={inputRef}
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
-          placeholder="Ask about what just broke…"
-          aria-label="Message the Medic"
+          placeholder={
+            alarm ? "Ask about what just broke…" : "Ask about a shipment, a lane, the board…"
+          }
+          aria-label="Message Dispatch"
           className="h-9"
         />
         {generating ? (
@@ -297,17 +336,29 @@ function DockPanel() {
   );
 }
 
-function EmptyState() {
+function EmptyState({ onPick }: { onPick: (prompt: string) => void }) {
   return (
-    <div className="space-y-3 py-6">
+    <div className="space-y-4 py-4">
       <p className="text-sm leading-relaxed text-foreground">
-        I watch the vitals and the request log. When something trips an alarm I open on my own and
-        tell you what broke.
+        I'm Dispatch. Ask me about the board — where a load is, what a status means, how to book
+        one.
       </p>
       <p className="text-sm leading-relaxed text-muted-foreground">
-        Nothing is failing right now. Arm a scenario from the Chaos Deck, or ask me what any of the
-        readings mean.
+        I read the same API the screens do, so if something breaks I'll say so and tell you what to
+        do about it.
       </p>
+      <div className="flex flex-wrap gap-1.5 pt-1">
+        {DUTY_PROMPTS.map((prompt) => (
+          <button
+            key={prompt}
+            type="button"
+            onClick={() => onPick(prompt)}
+            className="border border-border px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:border-dispatch/40 hover:text-foreground"
+          >
+            {prompt}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -346,7 +397,7 @@ function MessageRow({
 
   return (
     <div className="space-y-2">
-      <div className="prose-medic max-w-none text-sm leading-relaxed text-foreground">
+      <div className="prose-dispatch max-w-none text-sm leading-relaxed text-foreground">
         {message.streaming && message.text.length === 0 ? (
           <span className="text-muted-foreground">Reading the vitals…</span>
         ) : (

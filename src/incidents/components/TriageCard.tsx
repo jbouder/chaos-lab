@@ -16,7 +16,7 @@ const TONE: Record<string, string> = {
 
 /**
  * Rendered the instant an incident opens, straight from the runbook — no model
- * involved. The Medic's reading arrives afterwards and adds to this.
+ * involved. The Dispatch's reading arrives afterwards and adds to this.
  */
 export function TriageCard({
   incident,

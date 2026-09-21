@@ -9,7 +9,7 @@ const OPEN_QUIET_MS = 2000;
 const SAME_KIND_QUIET_MS = 90_000;
 
 /**
- * Decides when the Medic speaks up. Anything above a passing note opens the
+ * Decides when Dispatch speaks up. Anything above a passing note opens the
  * dock, so a fault never lands with the assistant still folded away. A repeat
  * of a kind it has already triaged gets one line, not a second identical card.
  */

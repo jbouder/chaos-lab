@@ -32,7 +32,7 @@ export function ChaosDeck() {
         <div>
           <h2 className="text-sm font-medium tracking-tight text-foreground">Chaos Deck</h2>
           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-            Induce a fault and watch the vitals answer. The Medic picks up anything that trips an
+            Induce a fault and watch the vitals answer. The Dispatch picks up anything that trips an
             alarm.
           </p>
         </div>

@@ -9,7 +9,7 @@
   Chaos Lab — "bedside monitor" theme.
   Dark is the primary world (monitors live in dim rooms); light is a designed
   "paper chart", not an inversion. Colour is semantic and sparse:
-  teal = healthy, amber = caution, red = crisis, scrub blue = the Medic.
+  teal = healthy, amber = caution, red = crisis, scrub blue = Dispatch.
 */
 
 :root {
@@ -41,12 +41,12 @@
   --vital-caution: oklch(0.7 0.15 72);
   --vital-crisis: oklch(0.55 0.21 27);
   --vital-idle: oklch(0.7 0.01 80);
-  --medic: oklch(0.52 0.11 228);
-  --medic-foreground: oklch(0.99 0.004 85);
+  --dispatch: oklch(0.52 0.11 228);
+  --dispatch-foreground: oklch(0.99 0.004 85);
   --trace-grid: oklch(0.9 0.008 80);
 
   --chart-1: var(--vital-healthy);
-  --chart-2: var(--medic);
+  --chart-2: var(--dispatch);
   --chart-3: var(--vital-caution);
   --chart-4: var(--vital-crisis);
   --chart-5: oklch(0.6 0.05 300);
@@ -78,8 +78,8 @@
   --vital-caution: oklch(0.8 0.15 72);
   --vital-crisis: oklch(0.68 0.2 22);
   --vital-idle: oklch(0.45 0.012 245);
-  --medic: oklch(0.72 0.12 228);
-  --medic-foreground: oklch(0.17 0.012 245);
+  --dispatch: oklch(0.72 0.12 228);
+  --dispatch-foreground: oklch(0.17 0.012 245);
   --trace-grid: oklch(0.245 0.014 245);
 }
 
@@ -111,8 +111,8 @@
   --color-caution: var(--vital-caution);
   --color-crisis: var(--vital-crisis);
   --color-vital-idle: var(--vital-idle);
-  --color-medic: var(--medic);
-  --color-medic-foreground: var(--medic-foreground);
+  --color-dispatch: var(--dispatch);
+  --color-dispatch-foreground: var(--dispatch-foreground);
   --color-trace-grid: var(--trace-grid);
 
   --color-chart-1: var(--chart-1);
@@ -149,38 +149,38 @@
 }
 
 @layer components {
-  /* The Medic answers in markdown; keep it dense and unstyled-looking. */
-  .prose-medic > * + * {
+  /* The Dispatch answers in markdown; keep it dense and unstyled-looking. */
+  .prose-dispatch > * + * {
     margin-top: 0.7em;
   }
-  .prose-medic p {
+  .prose-dispatch p {
     margin: 0;
   }
-  .prose-medic strong {
+  .prose-dispatch strong {
     font-weight: 600;
     color: var(--foreground);
   }
-  .prose-medic ol,
-  .prose-medic ul {
+  .prose-dispatch ol,
+  .prose-dispatch ul {
     margin: 0;
     padding-left: 1.1rem;
     display: grid;
     gap: 0.3em;
   }
-  .prose-medic ol {
+  .prose-dispatch ol {
     list-style: decimal;
   }
-  .prose-medic ul {
+  .prose-dispatch ul {
     list-style: disc;
   }
-  .prose-medic code {
+  .prose-dispatch code {
     font-family: var(--font-mono);
     font-size: 0.85em;
     background: var(--muted);
     padding: 0.1em 0.3em;
     border-radius: var(--radius-sm);
   }
-  .prose-medic pre {
+  .prose-dispatch pre {
     font-family: var(--font-mono);
     font-size: 0.8em;
     background: var(--muted);
@@ -188,12 +188,12 @@
     border-radius: var(--radius-md);
     overflow-x: auto;
   }
-  .prose-medic pre code {
+  .prose-dispatch pre code {
     background: transparent;
     padding: 0;
   }
-  .prose-medic a {
-    color: var(--medic);
+  .prose-dispatch a {
+    color: var(--dispatch);
     text-decoration: underline;
     text-underline-offset: 2px;
   }

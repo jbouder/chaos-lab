@@ -28,7 +28,7 @@ export function engineStatus(): EngineStatus {
 
 /**
  * WebGPU is the hard requirement. Everything else in the app works without it,
- * so a failure here downgrades the Medic to rules-only rather than breaking.
+ * so a failure here downgrades Dispatch to rules-only rather than breaking.
  */
 export async function checkSupport(): Promise<{ supported: boolean; reason: string }> {
   const gpu = (navigator as Navigator & { gpu?: { requestAdapter: () => Promise<unknown> } }).gpu;

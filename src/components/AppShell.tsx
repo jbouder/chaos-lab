@@ -1,18 +1,20 @@
-import { useAtomValue } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import { Activity, FlaskConical, ListOrdered, Radio, Settings, Truck } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import type { ReactNode } from "react";
 import { NavLink, Outlet } from "react-router";
-import { MedicDock } from "@/assistant/components/MedicDock";
+import { DispatchDock } from "@/assistant/components/DispatchDock";
 import { useAutoEngage } from "@/assistant/useAutoEngage";
 import { ChaosDeck } from "@/chaos/components/ChaosDeck";
+import { deckOpenAtom } from "@/chaos/deck";
 import { armedAtom } from "@/chaos/registry";
 import { ReauthDialog } from "@/components/ReauthDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { VitalsStrip } from "@/components/VitalsStrip";
 import { openIncidentsAtom } from "@/incidents/bus";
 import { AlarmBar } from "@/incidents/components/AlarmBar";
+import { useMediaQuery } from "@/lib/useMediaQuery";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -27,7 +29,9 @@ export function AppShell() {
   useAutoEngage();
   const armed = useAtomValue(armedAtom);
   const open = useAtomValue(openIncidentsAtom);
-  const [deckOpen, setDeckOpen] = useState(false);
+  const [deckOpen, setDeckOpen] = useAtom(deckOpenAtom);
+  // Wide enough to dock the deck beside the app; below this it slides over.
+  const docked = useMediaQuery("(min-width: 80rem)");
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
@@ -55,17 +59,17 @@ export function AppShell() {
 
         <div className="ml-auto flex items-center gap-1 md:ml-2">
           <ThemeToggle />
-          <Sheet open={deckOpen} onOpenChange={setDeckOpen}>
-            <SheetTrigger asChild>
-              <Button
-                size="sm"
-                variant={armed.length > 0 ? "default" : "outline"}
-                className="xl:hidden"
-              >
-                <FlaskConical className="size-3.5" aria-hidden />
-                Chaos{armed.length > 0 ? ` · ${armed.length}` : ""}
-              </Button>
-            </SheetTrigger>
+          <Button
+            size="sm"
+            variant={armed.length > 0 ? "default" : "outline"}
+            aria-expanded={deckOpen}
+            aria-controls="chaos-deck"
+            onClick={() => setDeckOpen(!deckOpen)}
+          >
+            <FlaskConical className="size-3.5" aria-hidden />
+            Chaos{armed.length > 0 ? ` · ${armed.length}` : ""}
+          </Button>
+          <Sheet open={deckOpen && !docked} onOpenChange={setDeckOpen}>
             <SheetContent side="right" className="w-full gap-0 p-0 sm:max-w-sm">
               <SheetTitle className="sr-only">Chaos Deck</SheetTitle>
               <ChaosDeck />
@@ -84,14 +88,17 @@ export function AppShell() {
           </div>
         </main>
 
-        <aside
-          aria-label="Chaos Deck"
-          className="hidden w-80 shrink-0 border-l border-border xl:block"
-        >
-          <div className="sticky top-0 h-dvh">
-            <ChaosDeck />
-          </div>
-        </aside>
+        {docked && deckOpen && (
+          <aside
+            id="chaos-deck"
+            aria-label="Chaos Deck"
+            className="w-80 shrink-0 border-l border-border motion-safe:animate-in motion-safe:slide-in-from-right-4"
+          >
+            <div className="sticky top-0 h-dvh">
+              <ChaosDeck />
+            </div>
+          </aside>
+        )}
       </div>
 
       <nav
@@ -103,7 +110,7 @@ export function AppShell() {
         ))}
       </nav>
 
-      <MedicDock />
+      <DispatchDock />
       <ReauthDialog />
     </div>
   );
@@ -133,7 +140,7 @@ function NavItem({
             ? "flex-1 flex-col gap-1 py-2 text-[10px]"
             : "border-b-2 px-3 py-1.5 -mb-[11px] pb-[11px]",
           isActive
-            ? cn("text-foreground", !compact && "border-medic")
+            ? cn("text-foreground", !compact && "border-dispatch")
             : cn("text-muted-foreground hover:text-foreground", !compact && "border-transparent"),
         )
       }

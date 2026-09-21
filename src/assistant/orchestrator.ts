@@ -8,6 +8,7 @@ import { detectIntent } from "./intents";
 import { extractJsonObject, parseActions, tidy } from "./parse";
 import { buildContext, chartSummary, systemPrompt, TRIAGE_SCHEMA, triagePrompt } from "./prompt";
 import { appendMessage, getMessages, getSettings, openDock, patchMessage } from "./store";
+import { answerSupportIntent } from "./support";
 
 type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
 
@@ -22,7 +23,7 @@ export function isGenerating(): boolean {
 
 function history(): ChatMessage[] {
   return getMessages()
-    .filter((message) => message.role === "user" || message.role === "medic")
+    .filter((message) => message.role === "user" || message.role === "dispatch")
     .slice(-HISTORY_TURNS)
     .map((message) => ({
       role: message.role === "user" ? ("user" as const) : ("assistant" as const),
@@ -42,7 +43,7 @@ export async function triageIncident(incident: Incident): Promise<void> {
   const fallbackAction = actionsFor(incident)[0]?.id;
 
   const placeholder = appendMessage({
-    role: "medic",
+    role: "dispatch",
     text: runbook.explain,
     actions: fallbackAction ? [fallbackAction] : [],
     incidentId: incident.id,
@@ -109,7 +110,7 @@ export async function sendUserMessage(input: string): Promise<void> {
 
   if (intent.kind === "action") {
     const message = appendMessage({
-      role: "medic",
+      role: "dispatch",
       text: intent.reply,
       incidentId: incident?.id,
       deterministic: true,
@@ -119,13 +120,25 @@ export async function sendUserMessage(input: string): Promise<void> {
     return;
   }
 
+  const support = answerSupportIntent(intent);
+  if (support) {
+    appendMessage({
+      role: "dispatch",
+      text: support.text,
+      actions: support.actions,
+      incidentId: support.actions.length > 0 ? incident?.id : undefined,
+      deterministic: true,
+    });
+    return;
+  }
+
   if (intent.kind === "triage") {
     const runbook = runbookFor(incident?.kind ?? "unknown");
     appendMessage({
-      role: "medic",
+      role: "dispatch",
       text: incident
         ? `${runbook.finding}. ${runbook.explain}`
-        : "Nothing is currently failing. Arm a scenario from the Chaos Deck and I will pick it up.",
+        : "Nothing is failing — no open alarms and the API is answering. Ask me about the board, or arm a scenario from the Chaos Deck and I'll pick it up.",
       actions: incident
         ? actionsFor(incident)
             .slice(0, 2)
@@ -142,7 +155,7 @@ export async function sendUserMessage(input: string): Promise<void> {
 
 async function streamAnswer(text: string, incident?: Incident): Promise<void> {
   const placeholder = appendMessage({
-    role: "medic",
+    role: "dispatch",
     text: "",
     incidentId: incident?.id,
     streaming: true,
@@ -174,7 +187,7 @@ async function streamAnswer(text: string, incident?: Incident): Promise<void> {
     ...history().slice(0, -1),
     {
       role: "user",
-      content: `${buildContext(incident)}${summary ? `\n\n${summary}` : ""}\n\nQUESTION\n${text}`,
+      content: `${buildContext(incident, text)}${summary ? `\n\n${summary}` : ""}\n\nQUESTION\n${text}`,
     },
   ];
 

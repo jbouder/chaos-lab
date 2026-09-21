@@ -4,7 +4,7 @@ A playground for breaking a web app on purpose, and an on-device assistant that 
 and helps fix it.
 
 The app you break is **Meridian**, a small freight-operations console. It is backed by Mock Service
-Worker, so there is no server: every fault is injected in the browser. The assistant, **the Medic**,
+Worker, so there is no server: every fault is injected in the browser. The assistant, **Dispatch**,
 runs a language model locally with WebGPU via [WebLLM](https://github.com/mlc-ai/web-llm). Nothing
 about an incident leaves the machine.
 
@@ -19,7 +19,7 @@ npm run dev      # http://localhost:5173
 ```
 
 Requires a browser with WebGPU (Chrome or Edge 113+, Safari 18+) for the model. Without it the app
-still works: triage, runbooks and every fix are deterministic, and the Medic says plainly that it is
+still works: triage, runbooks and every fix are deterministic, and Dispatch says plainly that it is
 running on runbooks alone.
 
 ```bash
@@ -31,7 +31,7 @@ npm run check    # Biome: format, lint, organise imports
 
 1. Arm something in the Chaos Deck, for example **Hard outage**.
 2. The vitals react first. Success rate drops, the trace flatlines, the alarm bar turns red.
-3. A detector raises an incident. The Medic opens with a triage card built from the runbook,
+3. A detector raises an incident. The Dispatch opens with a triage card built from the runbook,
    before the model has said anything.
 4. The model adds a one-line reading and recommends one action.
 5. Run the action. Its outcome is recorded against the incident, and the chart shows whether it
@@ -70,7 +70,7 @@ npm run check    # Biome: format, lint, organise imports
   capping how many run at once.
 - **Scripts** run scripted sequences: *The commute* (offline, back online, expired session),
   *The bad deploy* (version skew, schema drift, a missing chunk) and *The brownout* (slow, then
-  flaky, then throttled). They exist to check whether the Medic keeps its head across several
+  flaky, then throttled). They exist to check whether Dispatch keeps its head across several
   incidents instead of treating each one as the first.
 
 ## How it is put together
@@ -81,7 +81,7 @@ src/
 ├── mocks/         MSW handlers and the fault-injection layer
 ├── chaos/         Scenario registry, the scenarios, the Chaos Deck
 ├── incidents/     The bus, detectors, runbooks, remediation actions, the chart
-├── assistant/     The Medic: WebLLM engine worker, prompts, orchestrator, dock
+├── assistant/     The Dispatch: WebLLM engine worker, prompts, orchestrator, dock
 └── components/    Shell, vitals strip, theme
 ```
 

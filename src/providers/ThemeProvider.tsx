@@ -14,7 +14,7 @@ function readTheme(): Theme {
   return document.documentElement.classList.contains("light") ? "light" : "dark";
 }
 
-/** Applied outside React too, so the Medic can change the theme as an action. */
+/** Applied outside React too, so Dispatch can change the theme as an action. */
 export function applyTheme(theme: Theme): void {
   document.documentElement.classList.remove("light", "dark");
   document.documentElement.classList.add(theme);

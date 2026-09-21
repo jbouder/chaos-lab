@@ -4,9 +4,9 @@ import { uid } from "@/lib/ids";
 import { appStore } from "@/store/store";
 import type { Persona } from "./prompt";
 
-export type MedicMessage = {
+export type DispatchMessage = {
   id: string;
-  role: "user" | "medic" | "note";
+  role: "user" | "dispatch" | "note";
   text: string;
   at: number;
   actions?: RemediationId[];
@@ -17,13 +17,13 @@ export type MedicMessage = {
 };
 
 export const dockOpenAtom = atom(false);
-export const messagesAtom = atom<MedicMessage[]>([]);
+export const messagesAtom = atom<DispatchMessage[]>([]);
 export const unreadAtom = atom(0);
 export const focusIncidentIdAtom = atom<string | null>(null);
 
-export type MedicSettings = {
+export type DispatchSettings = {
   persona: Persona;
-  /** Allow the Medic to run `safe` actions without a click. */
+  /** Allow Dispatch to run `safe` actions without a click. */
   autonomy: boolean;
   /** Suppress auto-opening the dock on new incidents. */
   doNotInterrupt: boolean;
@@ -31,26 +31,26 @@ export type MedicSettings = {
   warmOnIdle: boolean;
 };
 
-const SETTINGS_KEY = "chaos-lab:medic";
+const SETTINGS_KEY = "chaos-lab:dispatch";
 
-function loadSettings(): MedicSettings {
-  const fallback: MedicSettings = {
-    persona: "medic",
+function loadSettings(): DispatchSettings {
+  const fallback: DispatchSettings = {
+    persona: "dispatch",
     autonomy: false,
     doNotInterrupt: false,
     warmOnIdle: true,
   };
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
-    return raw ? { ...fallback, ...(JSON.parse(raw) as Partial<MedicSettings>) } : fallback;
+    return raw ? { ...fallback, ...(JSON.parse(raw) as Partial<DispatchSettings>) } : fallback;
   } catch {
     return fallback;
   }
 }
 
-export const settingsAtom = atom<MedicSettings>(loadSettings());
+export const settingsAtom = atom<DispatchSettings>(loadSettings());
 
-export function updateSettings(patch: Partial<MedicSettings>): void {
+export function updateSettings(patch: Partial<DispatchSettings>): void {
   const next = { ...appStore.get(settingsAtom), ...patch };
   appStore.set(settingsAtom, next);
   try {
@@ -60,16 +60,16 @@ export function updateSettings(patch: Partial<MedicSettings>): void {
   }
 }
 
-export function getSettings(): MedicSettings {
+export function getSettings(): DispatchSettings {
   return appStore.get(settingsAtom);
 }
 
-export function getMessages(): MedicMessage[] {
+export function getMessages(): DispatchMessage[] {
   return appStore.get(messagesAtom);
 }
 
-export function appendMessage(message: Omit<MedicMessage, "id" | "at">): MedicMessage {
-  const full: MedicMessage = { ...message, id: uid("msg"), at: Date.now() };
+export function appendMessage(message: Omit<DispatchMessage, "id" | "at">): DispatchMessage {
+  const full: DispatchMessage = { ...message, id: uid("msg"), at: Date.now() };
   appStore.set(messagesAtom, [...getMessages(), full]);
   if (!appStore.get(dockOpenAtom) && message.role !== "user") {
     appStore.set(unreadAtom, appStore.get(unreadAtom) + 1);
@@ -77,7 +77,7 @@ export function appendMessage(message: Omit<MedicMessage, "id" | "at">): MedicMe
   return full;
 }
 
-export function patchMessage(id: string, patch: Partial<MedicMessage>): void {
+export function patchMessage(id: string, patch: Partial<DispatchMessage>): void {
   appStore.set(
     messagesAtom,
     getMessages().map((message) => (message.id === id ? { ...message, ...patch } : message)),

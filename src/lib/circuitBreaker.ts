@@ -11,7 +11,7 @@ type Listener = (snapshot: BreakerSnapshot) => void;
 
 /**
  * A textbook circuit breaker, kept deliberately observable so the UI can draw
- * its state and the Medic can explain it: closed → (threshold failures) → open
+ * its state and Dispatch can explain it: closed → (threshold failures) → open
  * → (cooldown) → half-open → (one probe) → closed or open again.
  */
 export class CircuitBreaker {

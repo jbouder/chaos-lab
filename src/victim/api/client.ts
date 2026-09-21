@@ -68,7 +68,7 @@ function titleFor(kind: IncidentKind, resource: string, status: number): string 
 /**
  * The single door every API call goes through. It times the request, records
  * it on the network trace, drives the circuit breaker, validates the payload
- * and translates whatever went wrong into an incident the Medic can reason
+ * and translates whatever went wrong into an incident Dispatch can reason
  * about.
  */
 export async function apiFetch<T>(

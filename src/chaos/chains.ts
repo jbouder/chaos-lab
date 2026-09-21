@@ -21,7 +21,7 @@ export const runningChainAtom = atom<string | null>(null);
 export const chainStepAtom = atom<string | null>(null);
 
 /**
- * Scripted sequences. They exist to test whether the Medic keeps its head
+ * Scripted sequences. They exist to test whether Dispatch keeps its head
  * across several incidents rather than treating each one as the first.
  */
 export const CHAINS: Chain[] = [

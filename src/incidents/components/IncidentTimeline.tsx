@@ -117,7 +117,7 @@ function ChartNote({ incident }: { incident: Incident }) {
             onClick={() => openDock(incident.id)}
           >
             <Stethoscope className="size-3" aria-hidden />
-            Ask the Medic
+            Ask Dispatch
           </Button>
         )}
       </div>

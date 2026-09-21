@@ -55,7 +55,7 @@ export function AlarmBar() {
         className="h-7 shrink-0 px-2 text-xs text-foreground"
         onClick={() => openDock(alarm.id)}
       >
-        Ask the Medic
+        Ask Dispatch
       </Button>
       <Button
         size="icon"

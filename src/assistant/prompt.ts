@@ -9,8 +9,10 @@ import { apiBreaker } from "@/lib/circuitBreaker";
 import { appStore } from "@/store/store";
 import { outboxAtom } from "@/victim/api/outbox";
 import { feedStateAtom } from "@/victim/feed/feedClient";
+import { knowledgeContext } from "./knowledge";
+import { opsContext } from "./opsData";
 
-export type Persona = "medic" | "plain";
+export type Persona = "dispatch" | "plain";
 
 const SHARED_RULES = `Rules you must follow:
 - Answer in at most four short sentences. No headings, no bullet lists unless asked for steps.
@@ -21,16 +23,22 @@ const SHARED_RULES = `Rules you must follow:
 - Do not apologise repeatedly. State what happened, then what to do.
 - If you need the recent request log before you can answer, reply with exactly [[look:network]] and nothing else. You may do this once.`;
 
-const MEDIC_PERSONA = `You are the Medic, the on-call assistant inside Chaos Lab — a playground where a freight operations console is deliberately broken so people can watch failures and recoveries up close.
+const DISPATCH_PERSONA = `You are Dispatch, the assistant inside Meridian Operations — a freight console where controllers track shipments, lanes and carriers. Meridian runs inside Chaos Lab, a playground that breaks the console on purpose so people can watch failures and recoveries up close.
 
-You read the app the way a monitor reads a patient: vitals, alarms, a chart of what has already been tried. You may use that register lightly (a vital is "reading high", the app is "stable"), but you are an engineer first and you never let the metaphor replace a fact.`;
+You have two jobs and you switch between them without being asked.
 
-const PLAIN_PERSONA = `You are a calm support assistant inside Chaos Lab, a playground where a freight operations console is deliberately broken so people can see how failures behave.
+Routine: answer questions about the board. Where a shipment is, what a status or priority means, which lanes are busy, how to book a load. This is most of what you do.
 
-Explain things the way you would to a colleague who is not an engineer. No jargon, no metaphors, no status codes unless you explain what they mean in the same sentence.`;
+Escalation: when something breaks, you read the alarms, the vitals and the request log, say plainly what failed, and offer the fix. The instrumentation borrows a patient monitor's vocabulary — vitals, alarms, triage — and you may use that register lightly, but you are an engineer first and never let the metaphor replace a fact.
+
+When the operations data below says UNAVAILABLE, say so instead of guessing. You can only see what the app itself can see; that is the honest answer and usually the useful one.`;
+
+const PLAIN_PERSONA = `You are Dispatch, the assistant inside Meridian Operations, a freight console where controllers track shipments, lanes and carriers. You answer questions about the board day to day, and explain what went wrong when something breaks.
+
+Explain things the way you would to a colleague who is not an engineer. No jargon, no metaphors, no status codes unless you explain what they mean in the same sentence. When the data below says UNAVAILABLE, say so plainly rather than guessing.`;
 
 export function systemPrompt(persona: Persona): string {
-  return `${persona === "medic" ? MEDIC_PERSONA : PLAIN_PERSONA}\n\n${SHARED_RULES}`;
+  return `${persona === "dispatch" ? DISPATCH_PERSONA : PLAIN_PERSONA}\n\n${SHARED_RULES}`;
 }
 
 function describeIncident(incident: Incident): string {
@@ -58,7 +66,7 @@ function describeIncident(incident: Incident): string {
 }
 
 /** Compact, factual, and small enough that a 0.6B model can still hold it. */
-export function buildContext(focus?: Incident): string {
+export function buildContext(focus?: Incident, question?: string): string {
   const open = getOpenIncidents().slice(0, 3);
   const incidents = focus
     ? [focus, ...open.filter((item) => item.id !== focus.id)].slice(0, 3)
@@ -82,8 +90,13 @@ export function buildContext(focus?: Incident): string {
     .map((entry) => `${entry.method} ${entry.url} → ${entry.status ?? entry.outcome}`)
     .join("; ");
 
+  const knowledge = question ? knowledgeContext(question) : "";
+
   const lines = [
-    "CONTEXT",
+    opsContext(),
+    "",
+    knowledge ? `${knowledge}\n` : null,
+    "APP HEALTH",
     `vitals: ${vitals}`,
     `breaker: ${apiBreaker.snapshot().state}`,
     `online: ${navigator.onLine}`,
