@@ -1,4 +1,3 @@
-import type { QueryClient } from "@tanstack/react-query";
 import { atom } from "jotai";
 import { armedScenarios, disarmAllScenarios, disarmScenario, getScenario } from "@/chaos/registry";
 import { clearStorageBallast, resetSavedSettings, stopLeaking } from "@/chaos/runtimeState";
@@ -6,6 +5,7 @@ import { backoffDelay, sleep } from "@/lib/backoff";
 import { apiBreaker } from "@/lib/circuitBreaker";
 import { appStore } from "@/store/store";
 import { clearOutbox, loadOutbox, outboxAtom } from "@/victim/api/outbox";
+import { getQueryClient, provokeTraffic } from "@/victim/api/provoke";
 import { feedClient } from "@/victim/feed/feedClient";
 import { getIncidents, recordAttempt, resolveKind, setIncidentStatus } from "./bus";
 import { getTrace } from "./networkTrace";
@@ -25,12 +25,6 @@ export type RemediationAction = {
 };
 
 /* --------------------------------------------------------- shared wiring */
-
-let queryClient: QueryClient | null = null;
-
-export function attachQueryClient(client: QueryClient): void {
-  queryClient = client;
-}
 
 /** Bumped to force panels to remount with fresh state. */
 export const panelResetAtom = atom(0);
@@ -52,8 +46,7 @@ function scenarioForIncident(incident?: Incident): string | null {
 }
 
 async function refetchAll(): Promise<void> {
-  if (!queryClient) return;
-  await queryClient.refetchQueries({ type: "active" });
+  await provokeTraffic();
 }
 
 /* -------------------------------------------------------------- actions */
@@ -105,7 +98,7 @@ const ACTIONS: RemediationAction[] = [
     risk: "safe",
     applies: () => true,
     run: async () => {
-      await queryClient?.cancelQueries();
+      await getQueryClient()?.cancelQueries();
       return { ok: true, note: "Cancelled the in-flight requests." };
     },
   },
@@ -136,7 +129,7 @@ const ACTIONS: RemediationAction[] = [
     applies: () => true,
     run: async () => {
       const cleared = clearStorageBallast();
-      queryClient?.clear();
+      getQueryClient()?.clear();
       if ("caches" in window) {
         const keys = await caches.keys();
         await Promise.all(keys.map((key) => caches.delete(key)));

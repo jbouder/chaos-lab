@@ -10,7 +10,7 @@ export type MonkeyConfig = {
   blastRadius: number;
 };
 
-export const monkeyAtom = atom<MonkeyConfig>({ running: false, cadence: 20, blastRadius: 2 });
+export const monkeyAtom = atom<MonkeyConfig>({ running: false, cadence: 6, blastRadius: 3 });
 export const monkeyNextAtom = atom<number | null>(null);
 
 let timer: ReturnType<typeof setTimeout> | null = null;
@@ -21,7 +21,9 @@ function config(): MonkeyConfig {
 
 /**
  * Arms and disarms scenarios on its own so failures arrive unannounced — the
- * closest this playground gets to the real thing.
+ * closest this playground gets to the real thing. Every move arms something:
+ * at the blast radius it swaps rather than merely clearing a slot, so waiting
+ * out a tick never buys quiet.
  */
 async function move(): Promise<void> {
   const { blastRadius } = config();
@@ -30,13 +32,14 @@ async function move(): Promise<void> {
   if (armed.length >= blastRadius) {
     const victim = armed[Math.floor(Math.random() * armed.length)];
     await disarmScenario(victim.id);
-  } else {
-    const candidates = allScenarios().filter(
-      (scenario) => !armed.some((entry) => entry.id === scenario.id),
-    );
-    const pick = candidates[Math.floor(Math.random() * candidates.length)];
-    if (pick) await armScenario(pick.id);
   }
+
+  const held = armedScenarios();
+  const candidates = allScenarios().filter(
+    (scenario) => !held.some((entry) => entry.id === scenario.id),
+  );
+  const pick = candidates[Math.floor(Math.random() * candidates.length)];
+  if (pick) await armScenario(pick.id);
 }
 
 function schedule(): void {

@@ -23,6 +23,7 @@ export function useShipments() {
     queryKey: queryKeys.shipments,
     queryFn: ({ signal }) =>
       apiFetch("/api/shipments", shipmentListSchema, { signal, resource: "Shipments" }),
+    refetchInterval: 8_000,
   });
 }
 
@@ -40,7 +41,7 @@ export function useMetrics() {
     queryKey: queryKeys.metrics,
     queryFn: ({ signal }) =>
       apiFetch("/api/metrics", metricsSchema, { signal, resource: "Metrics" }),
-    refetchInterval: 15_000,
+    refetchInterval: 5_000,
   });
 }
 
@@ -48,6 +49,7 @@ export function useLanes() {
   return useQuery({
     queryKey: queryKeys.lanes,
     queryFn: ({ signal }) => apiFetch("/api/lanes", lanesSchema, { signal, resource: "Lanes" }),
+    refetchInterval: 8_000,
   });
 }
 

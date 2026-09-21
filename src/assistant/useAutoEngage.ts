@@ -4,14 +4,14 @@ import { type IncidentKind, SEVERITY_RANK } from "@/incidents/types";
 import { triageIncident } from "./orchestrator";
 import { appendMessage, getSettings, openDock } from "./store";
 
-const OPEN_QUIET_MS = 6000;
+const OPEN_QUIET_MS = 2000;
 /** A second incident of the same kind is the same story, not a new one. */
 const SAME_KIND_QUIET_MS = 90_000;
 
 /**
- * Decides when the Medic speaks up. Errors and crises open the dock once per
- * storm; advisories only badge the button. A repeat of a kind it has already
- * triaged gets one line, not a second identical card.
+ * Decides when the Medic speaks up. Anything above a passing note opens the
+ * dock, so a fault never lands with the assistant still folded away. A repeat
+ * of a kind it has already triaged gets one line, not a second identical card.
  */
 export function useAutoEngage(): void {
   useEffect(() => {
@@ -22,7 +22,7 @@ export function useAutoEngage(): void {
       if (event.type !== "opened") return;
 
       const { incident } = event;
-      if (SEVERITY_RANK[incident.severity] < SEVERITY_RANK.error) return;
+      if (SEVERITY_RANK[incident.severity] < SEVERITY_RANK.warning) return;
 
       const now = Date.now();
       const lastForKind = triagedAt.get(incident.kind) ?? 0;

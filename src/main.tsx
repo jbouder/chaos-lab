@@ -7,13 +7,13 @@ import { App } from "./App";
 import { installScenarios } from "./chaos/scenarios";
 import { Toaster } from "./components/ui/sonner";
 import { TooltipProvider } from "./components/ui/tooltip";
-import { attachQueryClient } from "./incidents/actions";
 import { installDetectors } from "./incidents/detectors";
 import "./index.css";
 import { startMockApi } from "./mocks/browser";
 import { ThemeProvider } from "./providers/ThemeProvider";
 import { appStore } from "./store/store";
 import { loadOutbox } from "./victim/api/outbox";
+import { attachQueryClient } from "./victim/api/provoke";
 import { feedClient } from "./victim/feed/feedClient";
 
 const queryClient = new QueryClient({
@@ -23,7 +23,7 @@ const queryClient = new QueryClient({
       // than letting the library paper over failures invisibly.
       retry: false,
       refetchOnWindowFocus: false,
-      staleTime: 10_000,
+      staleTime: 2_000,
     },
     mutations: { retry: false },
   },

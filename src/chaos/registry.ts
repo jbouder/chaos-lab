@@ -1,6 +1,7 @@
 import { atom } from "jotai";
 import type { IncidentKind, Severity } from "@/incidents/types";
 import { appStore } from "@/store/store";
+import { provokeTraffic } from "@/victim/api/provoke";
 
 export type ScenarioCategory = "network" | "auth" | "runtime" | "performance" | "realtime";
 
@@ -91,6 +92,10 @@ export async function armScenario(
     appStore.set(armedAtom, [...existing, { id, armedAt: Date.now(), knobs: resolved }]);
   }
 
+  // An armed fault only changes what the API would do. Push traffic through it
+  // now so the symptom shows up while the user is still looking at the switch.
+  void provokeTraffic();
+
   return definition;
 }
 
@@ -104,6 +109,8 @@ export async function disarmScenario(id: string): Promise<void> {
     armedAtom,
     armedScenarios().filter((scenario) => scenario.id !== id),
   );
+  // Same on the way out: prove the recovery instead of waiting for a poll.
+  void provokeTraffic();
 }
 
 export async function disarmAllScenarios(): Promise<number> {

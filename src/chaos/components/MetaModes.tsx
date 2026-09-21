@@ -36,9 +36,9 @@ export function MetaModes() {
           </span>
           <Slider
             value={[monkey.cadence]}
-            min={5}
-            max={120}
-            step={5}
+            min={2}
+            max={60}
+            step={1}
             aria-label="Seconds between moves"
             onValueChange={([value]) => configureMonkey({ cadence: value })}
             className="flex-1"

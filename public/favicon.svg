@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Chaos Lab">
+  <title>Chaos Lab</title>
+  <rect width="32" height="32" rx="8" fill="#131a22" />
+  <!-- The monitor trace: healthy flatline until the fault spikes it. -->
+  <path
+    d="M2 19 H12"
+    fill="none"
+    stroke="#3ad6c5"
+    stroke-width="2.75"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M12 19 L15 7.5 L18.5 25.5 L21 19 L30 19"
+    fill="none"
+    stroke="#ff6f5c"
+    stroke-width="2.75"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>
