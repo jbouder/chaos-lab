@@ -23,6 +23,10 @@ export const chainStepAtom = atom<string | null>(null);
 /**
  * Scripted sequences. They exist to test whether Dispatch keeps its head
  * across several incidents rather than treating each one as the first.
+ *
+ * The beats are tight because arming a fault now pushes traffic through it
+ * straight away: a step only needs room for the incident to open and for
+ * Dispatch to say something, not for the next poll to come round.
  */
 export const CHAINS: Chain[] = [
   {
@@ -32,15 +36,15 @@ export const CHAINS: Chain[] = [
       "Connection drops, comes back, and the session has expired while you were gone. Queued writes have to survive both.",
     steps: [
       { afterMs: 0, scenarioId: "offline", action: "arm", note: "Signal lost" },
-      { afterMs: 9000, scenarioId: "offline", action: "disarm", note: "Back on the network" },
+      { afterMs: 4000, scenarioId: "offline", action: "disarm", note: "Back on the network" },
       {
-        afterMs: 2000,
+        afterMs: 1500,
         scenarioId: "session-expired",
         action: "arm",
         note: "The token expired offline",
       },
       {
-        afterMs: 12_000,
+        afterMs: 5000,
         scenarioId: "session-expired",
         action: "disarm",
         note: "Signed in again",
@@ -55,14 +59,14 @@ export const CHAINS: Chain[] = [
     steps: [
       { afterMs: 0, scenarioId: "version-skew", action: "arm", note: "A newer build is live" },
       {
-        afterMs: 5000,
+        afterMs: 2500,
         scenarioId: "schema-drift",
         action: "arm",
         note: "The response shape changed",
       },
-      { afterMs: 6000, scenarioId: "chunk-load", action: "arm", note: "An old chunk is gone" },
-      { afterMs: 12_000, scenarioId: "schema-drift", action: "disarm", note: "Rolled back" },
-      { afterMs: 1000, scenarioId: "version-skew", action: "disarm", note: "Versions agree again" },
+      { afterMs: 2500, scenarioId: "chunk-load", action: "arm", note: "An old chunk is gone" },
+      { afterMs: 5000, scenarioId: "schema-drift", action: "disarm", note: "Rolled back" },
+      { afterMs: 800, scenarioId: "version-skew", action: "disarm", note: "Versions agree again" },
     ],
   },
   {
@@ -72,11 +76,11 @@ export const CHAINS: Chain[] = [
       "The upstream degrades rather than dying: first slow, then flaky, then throttled. The breaker should do the work.",
     steps: [
       { afterMs: 0, scenarioId: "latency", action: "arm", note: "Latency climbing" },
-      { afterMs: 8000, scenarioId: "flaky", action: "arm", note: "Errors creeping in" },
-      { afterMs: 9000, scenarioId: "rate-limit", action: "arm", note: "Now being throttled" },
-      { afterMs: 14_000, scenarioId: "latency", action: "disarm", note: "Recovering" },
-      { afterMs: 2000, scenarioId: "flaky", action: "disarm", note: "Errors clearing" },
-      { afterMs: 2000, scenarioId: "rate-limit", action: "disarm", note: "Allowance restored" },
+      { afterMs: 3500, scenarioId: "flaky", action: "arm", note: "Errors creeping in" },
+      { afterMs: 3500, scenarioId: "rate-limit", action: "arm", note: "Now being throttled" },
+      { afterMs: 6000, scenarioId: "latency", action: "disarm", note: "Recovering" },
+      { afterMs: 1200, scenarioId: "flaky", action: "disarm", note: "Errors clearing" },
+      { afterMs: 1200, scenarioId: "rate-limit", action: "disarm", note: "Allowance restored" },
     ],
   },
 ];
