@@ -21,9 +21,10 @@ import { openIncidentsAtom } from "@/incidents/bus";
 import { SEVERITY_RANK } from "@/incidents/types";
 import { clockTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { getCommand } from "../commands";
 import { engineStatusAtom, getEngine, modelIdAtom, selectModel } from "../engineClient";
 import { MODELS } from "../modelCatalog";
-import { executeAction, sendUserMessage, stopGenerating } from "../orchestrator";
+import { executeAction, executeCommand, sendUserMessage, stopGenerating } from "../orchestrator";
 import {
   clearConversation,
   closeDock,
@@ -39,8 +40,8 @@ import { ModelStatus } from "./ModelStatus";
 const DUTY_PROMPTS = [
   "Where is MRD-4107?",
   "Which shipments are delayed?",
-  "What does exception mean?",
-  "How do I book a shipment?",
+  "Open the live feed",
+  "Switch to light mode",
 ];
 
 const TRIAGE_PROMPTS = [
@@ -340,8 +341,8 @@ function EmptyState({ onPick }: { onPick: (prompt: string) => void }) {
   return (
     <div className="space-y-4 py-4">
       <p className="text-sm leading-relaxed text-foreground">
-        I'm Dispatch. Ask me about the board — where a load is, what a status means, how to book
-        one.
+        I'm Dispatch. Ask me about the board — where a load is, what a status means, how to book one
+        — or tell me to open a page, pull up a shipment, or change the theme.
       </p>
       <p className="text-sm leading-relaxed text-muted-foreground">
         I read the same API the screens do, so if something breaks I'll say so and tell you what to
@@ -372,6 +373,7 @@ function MessageRow({
     text: string;
     at: number;
     actions?: string[];
+    commands?: string[];
     incidentId?: string;
     streaming?: boolean;
   };
@@ -405,9 +407,9 @@ function MessageRow({
         )}
       </div>
 
-      {message.actions && message.actions.length > 0 && (
+      {((message.actions?.length ?? 0) > 0 || (message.commands?.length ?? 0) > 0) && (
         <div className="flex flex-wrap gap-2 pt-0.5">
-          {message.actions.map((id) => {
+          {message.actions?.map((id) => {
             const action = getAction(id as Parameters<typeof getAction>[0]);
             if (!action) return null;
             return (
@@ -418,6 +420,21 @@ function MessageRow({
                 onClick={() => void executeAction(action.id, message.incidentId)}
               >
                 {action.label}
+              </Button>
+            );
+          })}
+
+          {message.commands?.map((id) => {
+            const command = getCommand(id as Parameters<typeof getCommand>[0]);
+            if (!command) return null;
+            return (
+              <Button
+                key={id}
+                size="sm"
+                variant="outline"
+                onClick={() => void executeCommand(command.id)}
+              >
+                {command.label}
               </Button>
             );
           })}

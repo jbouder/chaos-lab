@@ -1,7 +1,7 @@
 import { useAtom, useAtomValue } from "jotai";
 import { Activity, FlaskConical, ListOrdered, Radio, Settings, Truck } from "lucide-react";
-import type { ReactNode } from "react";
-import { NavLink, Outlet } from "react-router";
+import { type ReactNode, useEffect } from "react";
+import { NavLink, Outlet, useNavigate } from "react-router";
 import { DispatchDock } from "@/assistant/components/DispatchDock";
 import { useAutoEngage } from "@/assistant/useAutoEngage";
 import { ChaosDeck } from "@/chaos/components/ChaosDeck";
@@ -14,6 +14,7 @@ import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { VitalsStrip } from "@/components/VitalsStrip";
 import { openIncidentsAtom } from "@/incidents/bus";
 import { AlarmBar } from "@/incidents/components/AlarmBar";
+import { attachNavigator } from "@/lib/navigation";
 import { useMediaQuery } from "@/lib/useMediaQuery";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +33,9 @@ export function AppShell() {
   const [deckOpen, setDeckOpen] = useAtom(deckOpenAtom);
   // Wide enough to dock the deck beside the app; below this it slides over.
   const docked = useMediaQuery("(min-width: 80rem)");
+
+  const navigate = useNavigate();
+  useEffect(() => attachNavigator(navigate), [navigate]);
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">

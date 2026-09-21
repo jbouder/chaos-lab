@@ -1,23 +1,43 @@
 import type { RemediationId } from "@/incidents/types";
+import type { CommandId } from "./commands";
 
 const ACTION_PATTERN = /\[\[action:([a-zA-Z]+)\]\]/g;
+const COMMAND_PATTERN = /\[\[do:([a-zA-Z]+)\]\]/g;
 
-export type ParsedReply = { text: string; actions: RemediationId[] };
+export type ParsedReply = {
+  text: string;
+  actions: RemediationId[];
+  commands: CommandId[];
+};
 
 /**
- * Small models drift. The action grammar is deliberately trivial to emit and
+ * Small models drift. Both grammars are deliberately trivial to emit and
  * trivial to strip, so a stray tag never leaks into the rendered answer.
+ * `action` fixes something that broke; `do` drives the app.
  */
-export function parseActions(raw: string, known: Set<string>): ParsedReply {
+export function parseActions(
+  raw: string,
+  knownActions: Set<string>,
+  knownCommands: Set<string> = new Set(),
+): ParsedReply {
   const actions: RemediationId[] = [];
-  const text = raw.replace(ACTION_PATTERN, (_match, id: string) => {
-    if (known.has(id) && !actions.includes(id as RemediationId)) {
-      actions.push(id as RemediationId);
-    }
-    return "";
-  });
+  const commands: CommandId[] = [];
 
-  return { text: tidy(text), actions };
+  const text = raw
+    .replace(ACTION_PATTERN, (_match, id: string) => {
+      if (knownActions.has(id) && !actions.includes(id as RemediationId)) {
+        actions.push(id as RemediationId);
+      }
+      return "";
+    })
+    .replace(COMMAND_PATTERN, (_match, id: string) => {
+      if (knownCommands.has(id) && !commands.includes(id as CommandId)) {
+        commands.push(id as CommandId);
+      }
+      return "";
+    });
+
+  return { text: tidy(text), actions, commands };
 }
 
 /** Strip reasoning blocks and code fences some models wrap answers in. */

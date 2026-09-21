@@ -3,6 +3,7 @@ import { getIncident } from "@/incidents/bus";
 import { getTrace } from "@/incidents/networkTrace";
 import { runbookFor } from "@/incidents/runbooks";
 import type { Incident, RemediationId } from "@/incidents/types";
+import { allCommands, type CommandId, getCommand, runCommand } from "./commands";
 import { getEngine, interruptGeneration, markGenerating } from "./engineClient";
 import { detectIntent } from "./intents";
 import { extractJsonObject, parseActions, tidy } from "./parse";
@@ -13,6 +14,11 @@ import { answerSupportIntent } from "./support";
 type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
 
 const KNOWN_ACTIONS = new Set<string>(allActions().map((action) => action.id));
+const KNOWN_COMMANDS = new Set<string>(
+  allCommands()
+    .filter((command) => command.offerable)
+    .map((command) => command.id),
+);
 const HISTORY_TURNS = 6;
 
 let generating = false;
@@ -120,6 +126,11 @@ export async function sendUserMessage(input: string): Promise<void> {
     return;
   }
 
+  if (intent.kind === "command") {
+    await executeCommand(intent.command, intent.argument);
+    return;
+  }
+
   const support = answerSupportIntent(intent);
   if (support) {
     appendMessage({
@@ -192,12 +203,13 @@ async function streamAnswer(text: string, incident?: Incident): Promise<void> {
   ];
 
   const answer = await runWithLookups(engine, messages, placeholder.id);
-  const { text: clean, actions } = parseActions(answer, KNOWN_ACTIONS);
+  const { text: clean, actions, commands } = parseActions(answer, KNOWN_ACTIONS, KNOWN_COMMANDS);
 
   patchMessage(placeholder.id, {
     streaming: false,
     text: clean.length > 0 ? clean : "I could not produce an answer for that.",
     actions,
+    commands,
   });
 
   if (getSettings().autonomy && actions.length > 0) {
@@ -258,7 +270,9 @@ async function streamInto(
       const delta = chunk.choices[0]?.delta?.content ?? "";
       if (!delta) continue;
       buffer += delta;
-      patchMessage(placeholderId, { text: tidy(buffer.replace(/\[\[action:[a-zA-Z]+\]\]/g, "")) });
+      patchMessage(placeholderId, {
+        text: tidy(buffer.replace(/\[\[(?:action|do):[a-zA-Z]+\]\]/g, "")),
+      });
     }
     return buffer;
   } catch (error) {
@@ -285,6 +299,16 @@ export async function executeAction(id: RemediationId, incidentId?: string): Pro
 
   const result = await runRemediation(id, incident);
   patchMessage(message.id, { text: `${action.label}: ${result.note}` });
+}
+
+/** Runs an app command and leaves a one-line receipt in the thread. */
+export async function executeCommand(id: CommandId, argument?: string): Promise<void> {
+  const command = getCommand(id);
+  if (!command) return;
+
+  const message = appendMessage({ role: "note", text: `${command.label}…`, deterministic: true });
+  const result = await runCommand(id, argument);
+  patchMessage(message.id, { text: result.note });
 }
 
 export async function stopGenerating(): Promise<void> {

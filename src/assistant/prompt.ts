@@ -9,6 +9,7 @@ import { apiBreaker } from "@/lib/circuitBreaker";
 import { appStore } from "@/store/store";
 import { outboxAtom } from "@/victim/api/outbox";
 import { feedStateAtom } from "@/victim/feed/feedClient";
+import { commandCatalogue } from "./commands";
 import { knowledgeContext } from "./knowledge";
 import { opsContext } from "./opsData";
 
@@ -19,6 +20,7 @@ const SHARED_RULES = `Rules you must follow:
 - Use only the facts in CONTEXT. If the context does not say it, do not claim it.
 - Never invent a status code, a field name or a number.
 - To offer a fix, end a sentence with its tag, exactly: [[action:actionId]]. Offer at most two, only from AVAILABLE ACTIONS.
+- To offer to drive the app — open a page, change the theme, show the Chaos Deck — end a sentence with [[do:commandId]], only from APP COMMANDS. At most one per answer, and only when the user would plainly want it.
 - Never write an action tag for something the user did not ask about and the context does not support.
 - Do not apologise repeatedly. State what happened, then what to do.
 - If you need the recent request log before you can answer, reply with exactly [[look:network]] and nothing else. You may do this once.`;
@@ -110,6 +112,9 @@ export function buildContext(focus?: Incident, question?: string): string {
     "",
     "AVAILABLE ACTIONS",
     actions,
+    "",
+    "APP COMMANDS",
+    commandCatalogue(),
   ];
 
   return lines.filter((line) => line !== null).join("\n");

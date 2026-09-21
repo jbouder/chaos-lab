@@ -2,6 +2,7 @@ import { atom } from "jotai";
 import type { RemediationId } from "@/incidents/types";
 import { uid } from "@/lib/ids";
 import { appStore } from "@/store/store";
+import type { CommandId } from "./commands";
 import type { Persona } from "./prompt";
 
 export type DispatchMessage = {
@@ -10,6 +11,8 @@ export type DispatchMessage = {
   text: string;
   at: number;
   actions?: RemediationId[];
+  /** App commands offered alongside the answer — navigation, theme, deck. */
+  commands?: CommandId[];
   incidentId?: string;
   streaming?: boolean;
   /** Set when the text came from the rules, not the model. */

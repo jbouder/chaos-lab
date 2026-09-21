@@ -75,7 +75,7 @@ export const KNOWLEDGE: KnowledgeEntry[] = [
     id: "who",
     pattern: /\b(who are you|what (can|do) you do|help me|what are you)\b/i,
     answer:
-      "I am Dispatch. Day to day I answer questions about the board — where a shipment is, what a status means, how to book a load. When something breaks I switch to triage: I read the alarms and the request log, tell you what failed, and offer the fix.",
+      "I am Dispatch. Day to day I answer questions about the board — where a shipment is, what a status means, how to book a load — and I can drive the app for you: open a page, pull up a shipment, switch the theme, show the Chaos Deck. When something breaks I switch to triage: I read the alarms and the request log, tell you what failed, and offer the fix.",
   },
 ];
 

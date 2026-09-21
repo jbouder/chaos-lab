@@ -1,9 +1,11 @@
 import type { RemediationId } from "@/incidents/types";
 import type { Shipment } from "@/victim/api/schemas";
+import type { CommandId } from "./commands";
 import { findKnowledge } from "./knowledge";
 
 export type Intent =
   | { kind: "action"; action: RemediationId; reply: string }
+  | { kind: "command"; command: CommandId; argument?: string }
   | { kind: "shipment"; reference: string }
   | { kind: "board"; status: Shipment["status"] }
   | { kind: "summary" }
@@ -65,6 +67,35 @@ const ACTIONS: Array<{ pattern: RegExp; intent: Intent }> = [
   },
 ];
 
+/** Verbs that mean "take me there", as opposed to "tell me about it". */
+const NAVIGATE = /\b(go|goto|open|show|take me|navigate|jump|switch) (me )?(to |into )?(the )?/i;
+
+const COMMANDS: Array<{ pattern: RegExp; command: CommandId }> = [
+  { pattern: /\b(dark mode|dark theme|go dark|lights? off)\b/i, command: "themeDark" },
+  { pattern: /\b(light mode|light theme|go light|lights? on)\b/i, command: "themeLight" },
+  {
+    pattern: /\b(toggle|flip|switch|change) (the )?(theme|mode|appearance)\b/i,
+    command: "themeToggle",
+  },
+  { pattern: /\b(close|hide|collapse) (the )?(chaos )?deck\b/i, command: "closeDeck" },
+  { pattern: /\b(open|show|expand) (the )?(chaos )?deck\b/i, command: "openDeck" },
+  { pattern: /\b(start|run|unleash) (the )?(chaos )?monkey\b/i, command: "startMonkey" },
+  { pattern: /\b(stop|kill|halt) (the )?(chaos )?monkey\b/i, command: "stopMonkey" },
+  {
+    pattern: /\b(surprise me|break something|arm something|something random)\b/i,
+    command: "surpriseMe",
+  },
+  {
+    pattern: /\b(new shipment|book (a )?(load|shipment)|booking form)\b/i,
+    command: "goNewShipment",
+  },
+  { pattern: /\b(overview|dashboard|home)\b/i, command: "goOverview" },
+  { pattern: /\b(shipments?( table| page| list)?|the board)\b/i, command: "goShipments" },
+  { pattern: /\b(live )?feed\b/i, command: "goFeed" },
+  { pattern: /\b(chart|timeline|incident log)\b/i, command: "goChart" },
+  { pattern: /\b(settings|preferences)\b/i, command: "goSettings" },
+];
+
 const TRIAGE =
   /\b(what (just )?happened|what'?s wrong|what is wrong|why did .* fail|any (alarms|incidents))\b/i;
 const SUMMARY =
@@ -78,7 +109,21 @@ const SUMMARY =
  */
 export function detectIntent(input: string): Intent {
   const reference = input.match(REFERENCE);
-  if (reference) return { kind: "shipment", reference: `${reference[1]}-${reference[2]}` };
+  if (reference) {
+    const ref = `${reference[1]}-${reference[2]}`;
+    // "open MRD-4107" moves the app; "where is MRD-4107" just answers.
+    return NAVIGATE.test(input)
+      ? { kind: "command", command: "openShipment", argument: ref }
+      : { kind: "shipment", reference: ref };
+  }
+
+  // Theme, deck and monkey commands read as instructions wherever they appear;
+  // the page commands need a verb, so "the chart is flat" is not a navigation.
+  for (const rule of COMMANDS) {
+    if (!rule.pattern.test(input)) continue;
+    if (rule.command.startsWith("go") && !NAVIGATE.test(input)) continue;
+    return { kind: "command", command: rule.command };
+  }
 
   for (const rule of ACTIONS) {
     if (rule.pattern.test(input)) return rule.intent;
