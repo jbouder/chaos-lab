@@ -77,8 +77,8 @@ const COMMANDS: Array<{ pattern: RegExp; command: CommandId }> = [
     pattern: /\b(toggle|flip|switch|change) (the )?(theme|mode|appearance)\b/i,
     command: "themeToggle",
   },
-  { pattern: /\b(close|hide|collapse) (the )?(chaos )?deck\b/i, command: "closeDeck" },
-  { pattern: /\b(open|show|expand) (the )?(chaos )?deck\b/i, command: "openDeck" },
+  { pattern: /\b(close|hide|collapse) (me |us )?(the )?(chaos )?deck\b/i, command: "closeDeck" },
+  { pattern: /\b(open|show|expand) (me |us )?(the )?(chaos )?deck\b/i, command: "openDeck" },
   { pattern: /\b(start|run|unleash) (the )?(chaos )?monkey\b/i, command: "startMonkey" },
   { pattern: /\b(stop|kill|halt) (the )?(chaos )?monkey\b/i, command: "stopMonkey" },
   {
@@ -95,6 +95,14 @@ const COMMANDS: Array<{ pattern: RegExp; command: CommandId }> = [
   { pattern: /\b(chart|timeline|incident log)\b/i, command: "goChart" },
   { pattern: /\b(settings|preferences)\b/i, command: "goSettings" },
 ];
+
+/**
+ * Question forms that ask *about* a remediation rather than asking for it.
+ * "retry" is an instruction; "why did the retry fail" is a question, and
+ * answering it by retrying is the wrong move.
+ */
+const ASKS_ABOUT =
+  /\b(why|should (i|we)|what if|is it (safe|worth)|do i (need|have) to|did (it|that|the))\b/i;
 
 const TRIAGE =
   /\b(what (just )?happened|what'?s wrong|what is wrong|why did .* fail|any (alarms|incidents))\b/i;
@@ -125,12 +133,19 @@ export function detectIntent(input: string): Intent {
     return { kind: "command", command: rule.command };
   }
 
-  for (const rule of ACTIONS) {
-    if (rule.pattern.test(input)) return rule.intent;
+  if (!ASKS_ABOUT.test(input)) {
+    for (const rule of ACTIONS) {
+      if (rule.pattern.test(input)) return rule.intent;
+    }
   }
 
   if (TRIAGE.test(input)) return { kind: "triage" };
   if (SUMMARY.test(input)) return { kind: "summary" };
+
+  // A definition outranks a filter: "what does exception mean" is a question
+  // about the status, not a request for the exception list.
+  const known = findKnowledge(input);
+  if (known) return { kind: "knowledge", answer: known.answer };
 
   // "which shipments are delayed" — a filter, not a definition.
   if (/\b(which|what|list|show|any|how many)\b/i.test(input)) {
@@ -138,9 +153,6 @@ export function detectIntent(input: string): Intent {
       if (rule.pattern.test(input)) return { kind: "board", status: rule.status };
     }
   }
-
-  const known = findKnowledge(input);
-  if (known) return { kind: "knowledge", answer: known.answer };
 
   return { kind: "none" };
 }

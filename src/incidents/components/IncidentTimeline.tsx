@@ -1,5 +1,5 @@
 import { useAtomValue } from "jotai";
-import { CircleCheck, CircleDot, Stethoscope, Trash2 } from "lucide-react";
+import { CircleCheck, CircleDot, Headset, Trash2 } from "lucide-react";
 import { openDock } from "@/assistant/store";
 import { Button } from "@/components/ui/button";
 import { clockTime, sinceLabel } from "@/lib/format";
@@ -116,7 +116,7 @@ function ChartNote({ incident }: { incident: Incident }) {
             className="h-6 px-2 text-xs"
             onClick={() => openDock(incident.id)}
           >
-            <Stethoscope className="size-3" aria-hidden />
+            <Headset className="size-3" aria-hidden />
             Ask Dispatch
           </Button>
         )}

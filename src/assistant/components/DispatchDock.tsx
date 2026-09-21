@@ -1,5 +1,5 @@
 import { useAtomValue } from "jotai";
-import { Activity, ArrowUp, Eraser, Settings2, Square, Stethoscope, X } from "lucide-react";
+import { Activity, ArrowUp, Eraser, Headset, Settings2, Square, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -94,7 +94,7 @@ export function DispatchDock() {
               )}
               aria-hidden
             />
-            <Stethoscope className="size-5" aria-hidden />
+            <Headset className="size-5" aria-hidden />
             {unread > 0 && (
               <span className="tabular absolute -right-0.5 -top-0.5 flex size-4.5 items-center justify-center rounded-full bg-dispatch font-mono text-[10px] text-dispatch-foreground">
                 {unread > 9 ? "9+" : unread}
