@@ -1,4 +1,6 @@
-import type { RemediationId } from "@/incidents/types";
+import { actionsFor } from "@/incidents/actions";
+import { runbookFor } from "@/incidents/runbooks";
+import type { Incident, RemediationId } from "@/incidents/types";
 import type { Shipment } from "@/victim/api/schemas";
 import type { Intent } from "./intents";
 import {
@@ -119,8 +121,33 @@ function summaryReply(): SupportReply {
   };
 }
 
-/** Routine asks answered from data, with no model in the loop. */
-export function answerSupportIntent(intent: Intent): SupportReply | null {
+function triageReply(incident?: Incident): SupportReply {
+  if (!incident) {
+    return {
+      text: "Nothing is failing — no open alarms and the API is answering. Ask me about the board, or arm a scenario from the Chaos Deck and I'll pick it up.",
+      actions: [],
+    };
+  }
+
+  const runbook = runbookFor(incident.kind);
+  return {
+    text: `${runbook.finding}. ${runbook.explain}`,
+    actions: actionsFor(incident)
+      .slice(0, 2)
+      .map((action) => action.id),
+  };
+}
+
+/**
+ * The answer the rules alone can give.
+ *
+ * This used to be the final word on a routine ask. It now has two jobs: it is
+ * what the reader sees the instant they hit enter, and it is the grounding the
+ * model phrases its own answer from. The model gets the last word, but only
+ * ever over facts that were looked up here — so the numbers cannot drift even
+ * when the prose does.
+ */
+export function answerSupportIntent(intent: Intent, incident?: Incident): SupportReply | null {
   switch (intent.kind) {
     case "shipment":
       return shipmentReply(intent.reference);
@@ -130,6 +157,8 @@ export function answerSupportIntent(intent: Intent): SupportReply | null {
       return summaryReply();
     case "knowledge":
       return { text: intent.answer, actions: [] };
+    case "triage":
+      return triageReply(incident);
     default:
       return null;
   }

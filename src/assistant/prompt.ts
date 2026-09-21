@@ -16,8 +16,9 @@ import { opsContext } from "./opsData";
 export type Persona = "dispatch" | "plain";
 
 const SHARED_RULES = `Rules you must follow:
-- Answer in at most four short sentences. No headings, no bullet lists unless asked for steps.
+- Answer in at most four short sentences. No headings, and no bullet lists unless asked for steps or RESOLVED FACTS hands you a list to pass on.
 - Use only the facts in CONTEXT. If the context does not say it, do not claim it.
+- RESOLVED FACTS, when present, is a lookup already run for this question. Answer from it in your own words: never change a reference, a number or a status, never add a row to a list it gives you, and never contradict it.
 - Never invent a status code, a field name or a number.
 - To offer a fix, end a sentence with its tag, exactly: [[action:actionId]]. Offer at most two, only from AVAILABLE ACTIONS.
 - To offer to drive the app — open a page, change the theme, show the Chaos Deck — end a sentence with [[do:commandId]], only from APP COMMANDS. At most one per answer, and only when the user would plainly want it.
@@ -68,7 +69,7 @@ function describeIncident(incident: Incident): string {
 }
 
 /** Compact, factual, and small enough that a 0.6B model can still hold it. */
-export function buildContext(focus?: Incident, question?: string): string {
+export function buildContext(focus?: Incident, question?: string, facts?: string): string {
   const open = getOpenIncidents().slice(0, 3);
   const incidents = focus
     ? [focus, ...open.filter((item) => item.id !== focus.id)].slice(0, 3)
@@ -95,6 +96,7 @@ export function buildContext(focus?: Incident, question?: string): string {
   const knowledge = question ? knowledgeContext(question) : "";
 
   const lines = [
+    facts ? `RESOLVED FACTS (looked up for this question — answer from these)\n${facts}\n` : null,
     opsContext(),
     "",
     knowledge ? `${knowledge}\n` : null,

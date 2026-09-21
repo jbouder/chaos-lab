@@ -4,12 +4,12 @@ import { getTrace } from "@/incidents/networkTrace";
 import { runbookFor } from "@/incidents/runbooks";
 import type { Incident, RemediationId } from "@/incidents/types";
 import { allCommands, type CommandId, getCommand, runCommand } from "./commands";
-import { getEngine, interruptGeneration, markGenerating } from "./engineClient";
+import { getEngine, interruptGeneration, isEngineReady, markGenerating } from "./engineClient";
 import { detectIntent } from "./intents";
 import { extractJsonObject, parseActions, tidy } from "./parse";
 import { buildContext, chartSummary, systemPrompt, TRIAGE_SCHEMA, triagePrompt } from "./prompt";
 import { appendMessage, getMessages, getSettings, openDock, patchMessage } from "./store";
-import { answerSupportIntent } from "./support";
+import { answerSupportIntent, type SupportReply } from "./support";
 
 type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
 
@@ -55,6 +55,10 @@ export async function triageIncident(incident: Incident): Promise<void> {
     incidentId: incident.id,
     deterministic: true,
   });
+
+  // Only read the incident if the model can answer now. Waiting on a cold
+  // engine would rewrite a card the reader finished reading a minute ago.
+  if (!isEngineReady()) return;
 
   let engine: Awaited<ReturnType<typeof getEngine>>;
   try {
@@ -131,8 +135,12 @@ export async function sendUserMessage(input: string): Promise<void> {
     return;
   }
 
-  const support = answerSupportIntent(intent);
-  if (support) {
+  // Everything that is a question rather than an instruction goes to the
+  // model. The rules still run first, but now they resolve the facts instead
+  // of writing the answer — see `streamAnswer`.
+  const support = answerSupportIntent(intent, incident);
+
+  if (support && !getSettings().modelAnswers) {
     appendMessage({
       role: "dispatch",
       text: support.text,
@@ -143,28 +151,36 @@ export async function sendUserMessage(input: string): Promise<void> {
     return;
   }
 
-  if (intent.kind === "triage") {
-    const runbook = runbookFor(incident?.kind ?? "unknown");
+  await streamAnswer(text, incident, support);
+}
+
+/**
+ * The model answers; the rules are the grounding under it and the answer of
+ * last resort.
+ *
+ * One turn produces one answer. An earlier draft rendered the rules reply
+ * first and let the stream overwrite it, which read as a glitch — text you had
+ * already started reading rearranging itself. So the rules answer is only
+ * shown when the model cannot answer now: with a cold or absent engine it is
+ * the whole reply, and Dispatch picks the talking back up once the model is
+ * warm. Opening the dock warms it, so this is the first turn at most.
+ */
+async function streamAnswer(
+  text: string,
+  incident?: Incident,
+  fallback?: SupportReply | null,
+): Promise<void> {
+  if (fallback && !isEngineReady()) {
     appendMessage({
       role: "dispatch",
-      text: incident
-        ? `${runbook.finding}. ${runbook.explain}`
-        : "Nothing is failing — no open alarms and the API is answering. Ask me about the board, or arm a scenario from the Chaos Deck and I'll pick it up.",
-      actions: incident
-        ? actionsFor(incident)
-            .slice(0, 2)
-            .map((action) => action.id)
-        : [],
-      incidentId: incident?.id,
+      text: fallback.text,
+      actions: fallback.actions,
+      incidentId: fallback.actions.length > 0 ? incident?.id : undefined,
       deterministic: true,
     });
     return;
   }
 
-  await streamAnswer(text, incident);
-}
-
-async function streamAnswer(text: string, incident?: Incident): Promise<void> {
   const placeholder = appendMessage({
     role: "dispatch",
     text: "",
@@ -176,6 +192,15 @@ async function streamAnswer(text: string, incident?: Incident): Promise<void> {
   try {
     engine = await getEngine();
   } catch (error) {
+    if (fallback) {
+      patchMessage(placeholder.id, {
+        streaming: false,
+        deterministic: true,
+        text: fallback.text,
+        actions: fallback.actions,
+      });
+      return;
+    }
     const runbook = runbookFor(incident?.kind ?? "unknown");
     patchMessage(placeholder.id, {
       streaming: false,
@@ -198,17 +223,29 @@ async function streamAnswer(text: string, incident?: Incident): Promise<void> {
     ...history().slice(0, -1),
     {
       role: "user",
-      content: `${buildContext(incident, text)}${summary ? `\n\n${summary}` : ""}\n\nQUESTION\n${text}`,
+      content: `${buildContext(incident, text, fallback?.text)}${summary ? `\n\n${summary}` : ""}\n\nQUESTION\n${text}`,
     },
   ];
 
   const answer = await runWithLookups(engine, messages, placeholder.id);
   const { text: clean, actions, commands } = parseActions(answer, KNOWN_ACTIONS, KNOWN_COMMANDS);
 
+  if (clean.length === 0) {
+    // Nothing usable came back — hand over the rules answer rather than an
+    // apology. Only the empty placeholder is overwritten, never read text.
+    patchMessage(placeholder.id, {
+      streaming: false,
+      deterministic: Boolean(fallback),
+      text: fallback?.text ?? "I could not produce an answer for that.",
+      actions: fallback?.actions ?? [],
+    });
+    return;
+  }
+
   patchMessage(placeholder.id, {
     streaming: false,
-    text: clean.length > 0 ? clean : "I could not produce an answer for that.",
-    actions,
+    text: clean,
+    actions: actions.length > 0 ? actions : (fallback?.actions ?? []),
     commands,
   });
 

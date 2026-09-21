@@ -28,6 +28,12 @@ export type DispatchSettings = {
   persona: Persona;
   /** Allow Dispatch to run `safe` actions without a click. */
   autonomy: boolean;
+  /**
+   * Let the model phrase every answer, with the looked-up facts as grounding.
+   * Off, routine asks are answered from the rules alone — instant, identical
+   * every time, and available with no WebGPU.
+   */
+  modelAnswers: boolean;
   /** Suppress auto-opening the dock on new incidents. */
   doNotInterrupt: boolean;
   /** Start downloading the model when the tab goes idle. */
@@ -40,6 +46,7 @@ function loadSettings(): DispatchSettings {
   const fallback: DispatchSettings = {
     persona: "dispatch",
     autonomy: false,
+    modelAnswers: true,
     doNotInterrupt: false,
     warmOnIdle: true,
   };

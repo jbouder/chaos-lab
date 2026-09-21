@@ -41,7 +41,7 @@ const DUTY_PROMPTS = [
   "Where is MRD-4107?",
   "Which shipments are delayed?",
   "Open the live feed",
-  "Switch to light mode",
+  "Switch to dark mode",
 ];
 
 const TRIAGE_PROMPTS = [
@@ -211,6 +211,12 @@ function DockPanel() {
               }
             >
               Explain it without the jargon
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={settings.modelAnswers}
+              onCheckedChange={(checked) => updateSettings({ modelAnswers: checked })}
+            >
+              Let the model write the answers
             </DropdownMenuCheckboxItem>
             <DropdownMenuCheckboxItem
               checked={settings.autonomy}
