@@ -1,0 +1,220 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "@fontsource-variable/instrument-sans";
+@import "@fontsource-variable/jetbrains-mono";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+  Chaos Lab — "bedside monitor" theme.
+  Dark is the primary world (monitors live in dim rooms); light is a designed
+  "paper chart", not an inversion. Colour is semantic and sparse:
+  teal = healthy, amber = caution, red = crisis, scrub blue = the Medic.
+*/
+
+:root {
+  --radius: 0.5rem;
+
+  /* paper chart */
+  --background: oklch(0.975 0.006 85);
+  --foreground: oklch(0.22 0.012 60);
+  --card: oklch(0.995 0.003 85);
+  --card-foreground: oklch(0.22 0.012 60);
+  --popover: oklch(0.995 0.003 85);
+  --popover-foreground: oklch(0.22 0.012 60);
+  --primary: oklch(0.28 0.014 60);
+  --primary-foreground: oklch(0.98 0.004 85);
+  --secondary: oklch(0.94 0.008 85);
+  --secondary-foreground: oklch(0.28 0.014 60);
+  --muted: oklch(0.94 0.008 85);
+  --muted-foreground: oklch(0.49 0.012 70);
+  --accent: oklch(0.93 0.012 220);
+  --accent-foreground: oklch(0.28 0.02 230);
+  --destructive: oklch(0.55 0.21 27);
+  --destructive-foreground: oklch(0.99 0.004 85);
+  --border: oklch(0.89 0.009 80);
+  --input: oklch(0.89 0.009 80);
+  --ring: oklch(0.58 0.11 228);
+
+  /* vitals */
+  --vital-healthy: oklch(0.6 0.12 182);
+  --vital-caution: oklch(0.7 0.15 72);
+  --vital-crisis: oklch(0.55 0.21 27);
+  --vital-idle: oklch(0.7 0.01 80);
+  --medic: oklch(0.52 0.11 228);
+  --medic-foreground: oklch(0.99 0.004 85);
+  --trace-grid: oklch(0.9 0.008 80);
+
+  --chart-1: var(--vital-healthy);
+  --chart-2: var(--medic);
+  --chart-3: var(--vital-caution);
+  --chart-4: var(--vital-crisis);
+  --chart-5: oklch(0.6 0.05 300);
+}
+
+.dark {
+  /* monitor */
+  --background: oklch(0.165 0.01 245);
+  --foreground: oklch(0.945 0.006 240);
+  --card: oklch(0.205 0.012 245);
+  --card-foreground: oklch(0.945 0.006 240);
+  --popover: oklch(0.225 0.013 245);
+  --popover-foreground: oklch(0.945 0.006 240);
+  --primary: oklch(0.945 0.006 240);
+  --primary-foreground: oklch(0.2 0.012 245);
+  --secondary: oklch(0.255 0.013 245);
+  --secondary-foreground: oklch(0.945 0.006 240);
+  --muted: oklch(0.245 0.012 245);
+  --muted-foreground: oklch(0.685 0.014 242);
+  --accent: oklch(0.29 0.028 232);
+  --accent-foreground: oklch(0.93 0.02 230);
+  --destructive: oklch(0.62 0.2 25);
+  --destructive-foreground: oklch(0.98 0.005 240);
+  --border: oklch(0.285 0.013 245);
+  --input: oklch(0.305 0.014 245);
+  --ring: oklch(0.68 0.12 228);
+
+  --vital-healthy: oklch(0.78 0.14 178);
+  --vital-caution: oklch(0.8 0.15 72);
+  --vital-crisis: oklch(0.68 0.2 22);
+  --vital-idle: oklch(0.45 0.012 245);
+  --medic: oklch(0.72 0.12 228);
+  --medic-foreground: oklch(0.17 0.012 245);
+  --trace-grid: oklch(0.245 0.014 245);
+}
+
+@theme inline {
+  --font-sans: "Instrument Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-healthy: var(--vital-healthy);
+  --color-caution: var(--vital-caution);
+  --color-crisis: var(--vital-crisis);
+  --color-vital-idle: var(--vital-idle);
+  --color-medic: var(--medic);
+  --color-medic-foreground: var(--medic-foreground);
+  --color-trace-grid: var(--trace-grid);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+  }
+  /* Telemetry numerals: tabular, so readouts don't jitter as they tick. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings:
+      "tnum" 1,
+      "zero" 1;
+  }
+}
+
+@layer components {
+  /* The Medic answers in markdown; keep it dense and unstyled-looking. */
+  .prose-medic > * + * {
+    margin-top: 0.7em;
+  }
+  .prose-medic p {
+    margin: 0;
+  }
+  .prose-medic strong {
+    font-weight: 600;
+    color: var(--foreground);
+  }
+  .prose-medic ol,
+  .prose-medic ul {
+    margin: 0;
+    padding-left: 1.1rem;
+    display: grid;
+    gap: 0.3em;
+  }
+  .prose-medic ol {
+    list-style: decimal;
+  }
+  .prose-medic ul {
+    list-style: disc;
+  }
+  .prose-medic code {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    background: var(--muted);
+    padding: 0.1em 0.3em;
+    border-radius: var(--radius-sm);
+  }
+  .prose-medic pre {
+    font-family: var(--font-mono);
+    font-size: 0.8em;
+    background: var(--muted);
+    padding: 0.7rem;
+    border-radius: var(--radius-md);
+    overflow-x: auto;
+  }
+  .prose-medic pre code {
+    background: transparent;
+    padding: 0;
+  }
+  .prose-medic a {
+    color: var(--medic);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .hairline-t {
+    box-shadow: inset 0 1px 0 var(--border);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
